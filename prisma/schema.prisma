@@ -1,0 +1,261 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model SuperAdmin {
+  id           String  @id @default(uuid())
+  name         String
+  email        String  @unique
+  passwordHash String
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tenant {
+  id       String  @id @default(uuid())
+  name     String
+  domain   String  @unique
+  isActive Boolean @default(true)
+
+  users    User[]
+  prs      PurchaseRequisition[]
+  bankReqs BankChangeRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  username     String
+  email        String  @unique
+  profileImage String?
+
+  /**
+   * Optional for AD users
+   */
+  passwordHash String?
+
+  isActive Boolean @default(true)
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  purchaseRequisitions PurchaseRequisition[]
+  bankChangeRequests   BankChangeRequest[]
+  attachments          Attachment[]
+}
+
+//////////////////////////////////////////////////////
+// PURCHASE REQUISITION (ERP-OWNED STATUS)
+//////////////////////////////////////////////////////
+
+model PurchaseRequisition {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  referenceNumber String @unique
+  name            String
+
+  /**
+   * Snapshot of display name at creation time
+   */
+  preparedBy String
+
+  /**
+   * ERP-driven free-form status
+   * Initial value: "DRAFT"
+   */
+  status String
+
+  requestedDate  DateTime
+  accountingDate DateTime
+  reason         String
+
+  serviceStartDate DateTime?
+  serviceEndDate   DateTime?
+
+  /**
+   * Filled after ERP sync
+   */
+  erpPrNumber String?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  lines           PRLineItem[]
+  attachments     Attachment[]
+  approvalHistory ApprovalHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([referenceNumber])
+}
+
+model PRLineItem {
+  id            String              @id @default(uuid())
+  purchaseReqId String
+  purchaseReq   PurchaseRequisition @relation(fields: [purchaseReqId], references: [id])
+
+  lineItemNumber  Int
+  itemNumber      String
+  itemDescription String
+  productName     String
+  quantity        Int
+  unit            String
+
+  deliveryLocation       String
+  receivingOperatingUnit String
+  requester              String?
+
+  projectId       String
+  projectCategory String
+  customer        String
+  property        String
+  activity        String
+  costCentre      String
+  employee        String?
+  subActivity     String
+}
+
+//////////////////////////////////////////////////////
+// PAYROLL – BANK CHANGE REQUEST (ERP-OWNED STATUS)
+//////////////////////////////////////////////////////
+
+model BankChangeRequest {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  employeeId String
+  employee   User   @relation(fields: [employeeId], references: [id])
+
+  accountHolderName    String
+  newBankName          String
+  newBankBranch        String
+  newBankAccountNumber String
+  swiftCode            String
+  iban                 String
+
+  purpose              String
+  effectiveFromDate    DateTime
+  salaryTransferLetter String
+  clearanceCertificate String
+  submissionComments   String
+
+  /**
+   * ERP-driven free-form status
+   * Initial value: "SUBMITTED"
+   */
+  status String
+
+  fulfilledAt DateTime?
+  closedAt    DateTime?
+
+  attachments     Attachment[]
+  approvalHistory ApprovalHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////////
+// APPROVAL HISTORY (ERP → CANVAS, IMMUTABLE, GENERIC)
+//////////////////////////////////////////////////////
+
+model ApprovalHistory {
+  id       String @id @default(uuid())
+  tenantId String
+
+  /**
+   * PURCHASE_REQUISITION | BANK_CHANGE_REQUEST
+   */
+  entityType String
+  entityId   String
+
+  level         Int
+  approverName  String
+  approverEmail String?
+
+  /**
+   * Approved / Rejected / Returned / etc.
+   * Stored exactly as sent by ERP
+   */
+  status  String
+  comment String?
+
+  actedAt DateTime
+
+  createdAt             DateTime             @default(now())
+  purchaseRequisition   PurchaseRequisition? @relation(fields: [purchaseRequisitionId], references: [id])
+  purchaseRequisitionId String?
+  bankChangeRequest     BankChangeRequest?   @relation(fields: [bankChangeRequestId], references: [id])
+  bankChangeRequestId   String?
+
+  @@index([entityType, entityId])
+}
+
+//////////////////////////////////////////////////////
+// ATTACHMENTS (GENERIC, TRACEABLE, ERP SAFE)
+//////////////////////////////////////////////////////
+
+model Attachment {
+  id         String @id @default(uuid())
+  entityType String
+  entityId   String
+
+  attachmentType String
+  fileName       String
+  fileUrl        String
+  fileMimeType   String
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  createdAt             DateTime             @default(now())
+  purchaseRequisition   PurchaseRequisition? @relation(fields: [purchaseRequisitionId], references: [id])
+  purchaseRequisitionId String?
+  bankChangeRequest     BankChangeRequest?   @relation(fields: [bankChangeRequestId], references: [id])
+  bankChangeRequestId   String?
+
+  @@index([entityType, entityId])
+}
+
+//////////////////////////////////////////////////////
+// AUDIT LOG (FULL TRACEABILITY)
+//////////////////////////////////////////////////////
+
+model AuditLog {
+  id       String @id @default(uuid())
+  tenantId String
+
+  entityType String
+  entityId   String
+
+  action   String
+  oldValue Json?
+  newValue Json?
+
+  performedBy String
+  source      String // ERP | CANVAS | SYSTEM
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
