@@ -1,11 +1,12 @@
 const prisma = require("../utils/prisma");
 const jwt = require("jsonwebtoken");
 const { auditLog } = require("../utils/audit.helper");
+const bcrypt = require("bcryptjs"); 
 
 /* ================= CREATE SUPERADMIN ================= */
 exports.createsuperadmin = async (req, res) => {
   try {
-    const { name, email, passwordHash } = req.body;
+    const { name, email, password } = req.body; // ✅ plain password
 
     const existingAdmin = await prisma.superAdmin.findUnique({
       where: { email },
@@ -18,11 +19,17 @@ exports.createsuperadmin = async (req, res) => {
       });
     }
 
+    // ✅ HASH PASSWORD IN BACKEND
+    const passwordHash = await bcrypt.hash(password, 10);
+
     const admin = await prisma.superAdmin.create({
-      data: { name, email, passwordHash },
+      data: {
+        name,
+        email,
+        passwordHash
+      },
     });
 
-    // 🔍 AUDIT
     await auditLog(req, {
       entityType: "SUPERADMIN",
       entityId: admin.id,
@@ -39,10 +46,8 @@ exports.createsuperadmin = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "SuperAdmin created successfully",
-      data: admin,
     });
   } catch (error) {
-    console.error("Create Error:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to create superadmin",
@@ -54,7 +59,7 @@ exports.createsuperadmin = async (req, res) => {
 /* ================= LOGIN SUPERADMIN (JWT) ================= */
 exports.loginSuperAdmin = async (req, res) => {
   try {
-    const { email, passwordHash } = req.body;
+    const { email, password } = req.body; // ✅ plain password
 
     const admin = await prisma.superAdmin.findUnique({
       where: { email },
@@ -74,7 +79,10 @@ exports.loginSuperAdmin = async (req, res) => {
       });
     }
 
-    if (admin.passwordHash !== passwordHash) {
+    // ✅ bcrypt comparison
+    const isMatch = await bcrypt.compare(password, admin.passwordHash);
+
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
@@ -82,12 +90,14 @@ exports.loginSuperAdmin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: admin.id, role: "SUPERADMIN" },
+      {
+        id: admin.id,
+        role: "SUPERADMIN"
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
     );
 
-    // 🔍 AUDIT
     await auditLog(req, {
       entityType: "SUPERADMIN",
       entityId: admin.id,
@@ -107,7 +117,6 @@ exports.loginSuperAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login Error:", error);
     return res.status(500).json({
       success: false,
       message: "Login failed",

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const superadminController = require("../controller/SuperAdmin.controller");
+const superadminController = require("../controller/Superadmin.controller");    
 
 /* ================= AUTH ================= */
 router.post("/login", superadminController.loginSuperAdmin);

@@ -1,12 +1,12 @@
 const prisma = require("../utils/prisma");
-const { auditLog } = require("../utils/audit.helper");
 
 /* ================= CREATE TENANT ================= */
 exports.createTenant = async (req, res) => {
   try {
     const { name, domain } = req.body;
 
-    const existingTenant = await prisma.tenant.findUnique({
+    // check domain already exists
+    const existingTenant = await prisma.Tenant.findUnique({
       where: { domain },
     });
 
@@ -18,21 +18,10 @@ exports.createTenant = async (req, res) => {
     }
 
     const tenant = await prisma.tenant.create({
-      data: { name, domain },
-    });
-
-    // 🔍 AUDIT
-    await auditLog(req, {
-      entityType: "TENANT",
-      entityId: tenant.id,
-      action: "CREATE",
-      newValue: {
-        id: tenant.id,
-        name: tenant.name,
-        domain: tenant.domain,
-        isActive: tenant.isActive,
+      data: {
+        name,
+        domain,
       },
-      source: "ERP",
     });
 
     return res.status(201).json({
@@ -98,19 +87,19 @@ exports.updateTenant = async (req, res) => {
     const { id } = req.params;
     const { name, domain } = req.body;
 
-    const oldTenant = await prisma.tenant.findUnique({
+    const existingTenant = await prisma.tenant.findUnique({
       where: { id },
     });
 
-    if (!oldTenant) {
+    if (!existingTenant) {
       return res.status(404).json({
         success: false,
         message: "Tenant with this ID does not exist",
       });
     }
 
-    // domain uniqueness check
-    if (domain && domain !== oldTenant.domain) {
+    // if domain is changing, check uniqueness
+    if (domain && domain !== existingTenant.domain) {
       const domainExists = await prisma.tenant.findUnique({
         where: { domain },
       });
@@ -128,24 +117,6 @@ exports.updateTenant = async (req, res) => {
       data: { name, domain },
     });
 
-    // 🔍 AUDIT
-    await auditLog(req, {
-      entityType: "TENANT",
-      entityId: id,
-      action: "UPDATE",
-      oldValue: {
-        name: oldTenant.name,
-        domain: oldTenant.domain,
-        isActive: oldTenant.isActive,
-      },
-      newValue: {
-        name: updatedTenant.name,
-        domain: updatedTenant.domain,
-        isActive: updatedTenant.isActive,
-      },
-      source: "ERP",
-    });
-
     return res.status(200).json({
       success: true,
       message: "Tenant updated successfully",
@@ -156,6 +127,56 @@ exports.updateTenant = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update tenant",
+      error: error.message,
+    });
+  }
+};
+
+ /* DELETE TENANT
+ */
+exports.deleteTenant = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check tenant exists
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+    });
+
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: "Tenant not found",
+      });
+    }
+
+    // ❗ OPTIONAL SAFETY CHECK
+    // Prevent delete if users exist under tenant
+    const usersCount = await prisma.user.count({
+      where: { tenantId: id },
+    });
+
+    if (usersCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete tenant with existing users",
+      });
+    }
+
+    // Delete tenant
+    await prisma.tenant.delete({
+      where: { id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Tenant deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Tenant Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete tenant",
       error: error.message,
     });
   }
@@ -180,16 +201,6 @@ exports.blockTenant = async (req, res) => {
     const updatedTenant = await prisma.tenant.update({
       where: { id },
       data: { isActive: false },
-    });
-
-    // 🔍 AUDIT
-    await auditLog(req, {
-      entityType: "TENANT",
-      entityId: id,
-      action: "BLOCK",
-      oldValue: { isActive: true },
-      newValue: { isActive: false },
-      source: "ERP",
     });
 
     return res.status(200).json({
@@ -226,16 +237,6 @@ exports.unblockTenant = async (req, res) => {
     const updatedTenant = await prisma.tenant.update({
       where: { id },
       data: { isActive: true },
-    });
-
-    // 🔍 AUDIT
-    await auditLog(req, {
-      entityType: "TENANT",
-      entityId: id,
-      action: "UNBLOCK",
-      oldValue: { isActive: false },
-      newValue: { isActive: true },
-      source: "ERP",
     });
 
     return res.status(200).json({

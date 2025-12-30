@@ -13,7 +13,7 @@ router.post("/", tenantController.createTenant);
 router.get("/", tenantController.getTenants);
 router.get("/:id", tenantController.getTenantById);
 router.put("/:id", tenantController.updateTenant);
-
+router.delete("/:id", tenantController.deleteTenant);
 // Block / Unblock
 router.patch("/block/:id", tenantController.blockTenant);
 router.patch("/unblock/:id", tenantController.unblockTenant);

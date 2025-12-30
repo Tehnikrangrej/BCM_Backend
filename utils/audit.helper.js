@@ -1,31 +1,27 @@
 const prisma = require("./prisma");
 
-exports.auditLog = async (
-  req,
-  {
-    entityType,
-    entityId,
-    action,
-    oldValue = null,
-    newValue = null,
-    source = "SYSTEM",
-  }
-) => {
+exports.auditLog = async (req, payload) => {
   try {
     await prisma.auditLog.create({
       data: {
-        tenantId: req.tenant?.id || "GLOBAL",
-        entityType,
-        entityId,
-        action,
-        oldValue,
-        newValue,
+        tenantId:
+          payload.tenantId ||        // explicit
+          req.user?.tenantId ||       // from JWT
+          "SYSTEM",                  // fallback (VERY IMPORTANT)
+
+        entityType: payload.entityType,
+        entityId: payload.entityId,
+        action: payload.action,
+
+        oldValue: payload.oldValue || null,
+        newValue: payload.newValue || null,
+
         performedBy: req.user?.id || "SYSTEM",
-        source,
+        source: payload.source || "SYSTEM",
       },
     });
   } catch (error) {
-    // ❗ Audit must NEVER stop business logic
-    console.error("AuditLog Error:", error.message);
+    console.error("AUDIT LOG FAILED ❌", error);
+    // ❗ DO NOT THROW — audit must never crash live API
   }
 };
