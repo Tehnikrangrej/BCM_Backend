@@ -25,6 +25,7 @@ exports.createPurchaseRequisition = async (req, res) => {
       reason,
       serviceStartDate,
       serviceEndDate,
+      lines = [], // 👈 NEW
     } = req.body;
 
     const pr = await prisma.purchaseRequisition.create({
@@ -40,25 +41,47 @@ exports.createPurchaseRequisition = async (req, res) => {
         serviceEndDate,
         tenantId: req.user.tenantId,
         createdById: req.user.id,
+
+        // ✅ PRLineItem handled here
+        lines: {
+          create: lines.map((l) => ({
+            lineItemNumber: l.lineItemNumber,
+            itemNumber: l.itemNumber,
+            itemDescription: l.itemDescription,
+            productName: l.productName,
+            quantity: l.quantity,
+            unit: l.unit,
+            deliveryLocation: l.deliveryLocation,
+            receivingOperatingUnit: l.receivingOperatingUnit,
+            requester: l.requester,
+            projectId: l.projectId,
+            projectCategory: l.projectCategory,
+            customer: l.customer,
+            property: l.property,
+            activity: l.activity,
+            costCentre: l.costCentre,
+            employee: l.employee,
+            subActivity: l.subActivity,
+          })),
+        },
       },
+      include: { lines: true }, // 👈 IMPORTANT
     });
 
+    // 🔍 AUDIT – CREATE
     await auditLog(req, {
-  entityType: "PURCHASE_REQUISITION",
-  entityId: pr.id,
-  action: "CREATE",
-  tenantId: pr.tenantId,
-  newValue: {
-    referenceNumber: pr.referenceNumber,
-    name: pr.name,
-    status: pr.status,
-    reason: pr.reason,
-    requestedDate: pr.requestedDate,
-    accountingDate: pr.accountingDate,
-    createdById: pr.createdById,
-  },
-  source: req.user.role,
-});
+      entityType: "PURCHASE_REQUISITION",
+      entityId: pr.id,
+      action: "CREATE",
+      tenantId: pr.tenantId,
+      newValue: {
+        referenceNumber: pr.referenceNumber,
+        name: pr.name,
+        status: pr.status,
+        totalLines: pr.lines.length,
+      },
+      source: req.user.role,
+    });
 
     return res.status(201).json({
       success: true,
@@ -86,6 +109,7 @@ exports.getAllPurchaseRequisitions = async (req, res) => {
 
     const prs = await prisma.purchaseRequisition.findMany({
       where,
+      include: { lines: true }, // 👈 NEW
       orderBy: { createdAt: "desc" },
     });
 
@@ -101,6 +125,7 @@ exports.getAllPurchaseRequisitions = async (req, res) => {
   }
 };
 
+
 /**
  * ==============================
  * GET PR BY ID
@@ -113,7 +138,10 @@ exports.getPurchaseRequisitionById = async (req, res) => {
         ? { id: req.params.id }
         : { id: req.params.id, tenantId: req.user.tenantId };
 
-    const pr = await prisma.purchaseRequisition.findFirst({ where });
+    const pr = await prisma.purchaseRequisition.findFirst({
+      where,
+      include: { lines: true }, // 👈 NEW
+    });
 
     if (!pr) {
       return res.status(404).json({
@@ -141,12 +169,17 @@ exports.getPurchaseRequisitionById = async (req, res) => {
  */
 exports.updatePurchaseRequisition = async (req, res) => {
   try {
+    const { lines = [], ...prData } = req.body;
+
     const where =
       req.user.role === "SUPERADMIN"
         ? { id: req.params.id }
         : { id: req.params.id, tenantId: req.user.tenantId };
 
-    const existing = await prisma.purchaseRequisition.findFirst({ where });
+    const existing = await prisma.purchaseRequisition.findFirst({
+      where,
+      include: { lines: true },
+    });
 
     if (!existing) {
       return res.status(404).json({
@@ -162,26 +195,33 @@ exports.updatePurchaseRequisition = async (req, res) => {
       });
     }
 
+    // 1️⃣ Update PR header
     const pr = await prisma.purchaseRequisition.update({
       where: { id: existing.id },
-      data: req.body,
+      data: prData,
     });
+
+    // 2️⃣ Replace PRLineItems
+    await prisma.pRLineItem.deleteMany({
+      where: { purchaseReqId: existing.id },
+    });
+
+    if (lines.length) {
+      await prisma.pRLineItem.createMany({
+        data: lines.map((l) => ({
+          purchaseReqId: existing.id,
+          ...l,
+        })),
+      });
+    }
 
     // 🔍 AUDIT – UPDATE
     await auditLog(req, {
       entityType: "PURCHASE_REQUISITION",
       entityId: existing.id,
       action: "UPDATE",
-      oldValue: {
-        name: existing.name,
-        reason: existing.reason,
-        status: existing.status,
-      },
-      newValue: {
-        name: pr.name,
-        reason: pr.reason,
-        status: pr.status,
-      },
+      oldValue: { lineCount: existing.lines.length },
+      newValue: { lineCount: lines.length },
       source: req.user.role,
     });
 
@@ -229,8 +269,8 @@ exports.deletePurchaseRequisition = async (req, res) => {
       where: { id: existing.id },
     });
 
-    // 🔍 AUDIT – DELETE
-  await auditLog(req, {
+    // 🔍 AUDIT – DELETE (UNCHANGED)
+    await auditLog(req, {
       entityType: "PURCHASE_REQUISITION",
       entityId: existing.id,
       action: "DELETE",

@@ -10,4 +10,6 @@ app.use("/api/tenants", require("../routes/Tenant.routes"));
 app.use("/api/auditlogs", require("../routes/AuditLog.routes"));
 app.use("/api/users", require("../routes/USERS.routes"));
 app.use("/api/purchaserequisitions", require("../routes/PurchaseRequisition.routes"));
+app.use("/api/bankchangerequests", require("../routes/BankChangeRequest.routes"));
+
 module.exports = app;
