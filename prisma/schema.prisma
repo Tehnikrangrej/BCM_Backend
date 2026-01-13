@@ -183,7 +183,7 @@ model ApprovalHistory {
   id       String @id @default(uuid())
   tenantId String
 
-  /**
+  /** 
    * PURCHASE_REQUISITION | BANK_CHANGE_REQUEST
    */
   entityType String
