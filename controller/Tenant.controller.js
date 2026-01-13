@@ -1,4 +1,5 @@
 const prisma = require("../utils/prisma");
+const bcrypt = require("bcryptjs");
 
 /* ================= CREATE TENANT ================= */
 exports.createTenant = async (req, res) => {
@@ -61,6 +62,9 @@ exports.getTenantById = async (req, res) => {
 
     const tenant = await prisma.tenant.findUnique({
       where: { id },
+      include: {
+        users: true,
+      },
     });
 
     if (!tenant) {
@@ -249,6 +253,66 @@ exports.unblockTenant = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to unblock tenant",
+      error: error.message,
+    });
+  }
+};
+
+exports.TenantSyncUsers = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant ID is required",
+      });
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+    });
+
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: "Tenant not found",
+      });
+    }
+
+    const dummyPayload = [
+      { username: "Olivia Martin", email: `olivia.martin+${tenant?.domain}@example.com`, password: "Password@123" },
+      { username: "Liam Johnson", email: `liam.johnson+${tenant?.domain}@example.com`, password: "Password@123" },
+      { username: "Emma Davis", email: `emma.davis+${tenant?.domain}@example.com`, password: "Password@123" },
+      { username: "Noah Brown", email: `noah.brown+${tenant?.domain}@example.com`, password: "Password@123" },
+      { username: "Ava Wilson", email: `ava.wilson+${tenant?.domain}@example.com`, password: "Password@123" },
+    ];
+
+    const dummyUsers = await Promise.all(
+      dummyPayload.map(async (u) => ({
+        username: u.username,
+        email: u.email,
+        tenantId: id,
+        profileImage: null,
+        passwordHash: await bcrypt.hash(u.password, 10),
+      }))
+    );
+
+    const result = await prisma.user.createMany({
+      data: dummyUsers,
+      skipDuplicates: true,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Dummy users synced successfully",
+      insertedCount: result.count,
+    });
+  } catch (error) {
+    console.error("Tenant Sync Users Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to sync dummy users",
       error: error.message,
     });
   }

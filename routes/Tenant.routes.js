@@ -17,5 +17,5 @@ router.delete("/:id", tenantController.deleteTenant);
 // Block / Unblock
 router.patch("/block/:id", tenantController.blockTenant);
 router.patch("/unblock/:id", tenantController.unblockTenant);
-
+router.post("/sync-users/:id", tenantController.TenantSyncUsers);
 module.exports = router;
