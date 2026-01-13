@@ -15,10 +15,14 @@ const {
 } = require("../controller/User.controller");
 
 /**
- * 🔐 SuperAdmin Protected Routes
+ * � Public Routes
+ */
+router.post("/login", loginUser);
+
+/**
+ * �🔐 SuperAdmin Protected Routes
  */
 router.use(verifyToken, onlySuperAdmin);
-router.post("/login", loginUser);
 // CRUD
 router.post("/", createUser);
 router.get("/", getAllUsers);
