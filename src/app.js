@@ -1,5 +1,14 @@
+const cors = require("cors");
 const express = require("express");
 const app = express();
+ app.use(cors({
+  origin: [
+    "http://localhost:3001",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 // ✅ BODY PARSER (REQUIRED)
 app.use(express.json());
