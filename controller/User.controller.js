@@ -355,7 +355,7 @@ exports.getMe = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { id },
-      include: { tenant: true }
+      include: { tenant: true, purchaseRequisitions: {include :{lines:true}}, bankChangeRequests: true }
     });
 
     if (!user) {
@@ -375,7 +375,9 @@ exports.getMe = async (req, res) => {
         isActive: user.isActive,
         tenant: user.tenant,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
+        purchaseRequisitions: user.purchaseRequisitions,
+        bankChangeRequests: user.bankChangeRequests,
       }
     });
   } catch (error) {
