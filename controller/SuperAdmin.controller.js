@@ -126,6 +126,44 @@ exports.loginSuperAdmin = async (req, res) => {
   }
 };
 
+/* ================= GET ME (LOGGED IN SUPERADMIN) ================= */
+exports.getMe = async (req, res) => {
+  try {
+    const { id } = req.user;
+
+    const admin = await prisma.superAdmin.findUnique({
+      where: { id },
+    });
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "SuperAdmin not found",
+      });
+    }
+
+    // Return specific fields to avoid sensitive data if necessary, but mostly ok for admin
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        isActive: admin.isActive,
+        createdAt: admin.createdAt,
+        updatedAt: admin.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error("Get Me Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch superadmin details",
+      error: error.message,
+    });
+  }
+};
+
 /* ================= GET ALL SUPERADMINS ================= */
 exports.getsuperadmin = async (req, res) => {
   try {

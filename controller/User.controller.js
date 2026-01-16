@@ -345,3 +345,41 @@ exports.loginUser = async (req, res) => {
     });
   }
 };
+
+/**
+ * 👤 GET ME (LOGGED IN USER)
+ */
+exports.getMe = async (req, res) => {
+  try {
+    const { id } = req.user;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { tenant: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        tenantId: user.tenantId,
+        isActive: user.isActive,
+        tenant: user.tenant,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error("Get Me Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const superadminController = require("../controller/Superadmin.controller");    
+const { verifyToken } = require("../utils/auth.middleware");
 
 /* ================= AUTH ================= */
 router.post("/login", superadminController.loginSuperAdmin);
+router.get("/me", verifyToken, superadminController.getMe);
 
 /* ================= CREATE ================= */
 router.post("/", superadminController.createsuperadmin);

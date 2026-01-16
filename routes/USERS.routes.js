@@ -11,16 +11,22 @@ const {
   deleteUser,
   blockUser,
   unblockUser,
-  loginUser
+  loginUser,
+  getMe
 } = require("../controller/User.controller");
 
 /**
- * � Public Routes
+ * 🔓 Public Routes
  */
 router.post("/login", loginUser);
 
 /**
- * �🔐 SuperAdmin Protected Routes
+ * 👤 Authenticated User Routes
+ */
+router.get("/me", verifyToken, getMe);
+
+/**
+ * 🔐 SuperAdmin Protected Routes
  */
 router.use(verifyToken, onlySuperAdmin);
 // CRUD
