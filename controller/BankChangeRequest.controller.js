@@ -43,10 +43,35 @@ exports.createBankChangeRequest = async (req, res) => {
         salaryTransferLetter,
         clearanceCertificate,
         submissionComments,
-
         status: "SUBMITTED",
         tenantId: req.user.tenantId,
         employeeId: req.user.id,
+      },
+    });
+
+    // ✅ Save attachments (if any)
+    if (req.files && req.files.length) {
+      const attachmentsData = req.files.map((file) => ({
+        entityType: "BANK_CHANGE_REQUEST",
+        entityId: request.id,
+        attachmentType: "BANK_CHANGE_REQUEST",
+        fileName: file.originalname,
+        fileUrl: "/uploads/" + file.filename,
+        fileMimeType: file.mimetype,
+        uploadedById: req.user.id,
+        bankChangeRequestId: request.id,
+      }));
+
+      await prisma.attachment.createMany({
+        data: attachmentsData,
+      });
+    }
+
+    // 🔁 Fetch full request with attachments
+    const fullRequest = await prisma.bankChangeRequest.findUnique({
+      where: { id: request.id },
+      include: {
+        attachments: true,
       },
     });
 
@@ -67,7 +92,7 @@ exports.createBankChangeRequest = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      data: request,
+      data: fullRequest,
     });
   } catch (error) {
     return res.status(500).json({
@@ -86,17 +111,23 @@ exports.createBankChangeRequest = async (req, res) => {
  */
 exports.getAllBankChangeRequests = async (req, res) => {
   try {
-    const where =
-      req.user.role === "SUPERADMIN"
-        ? {}
-        : {
-            tenantId: req.user.tenantId,
-            employeeId: req.user.id,
-          };
+    let where = {};
+
+    if (req.user.role !== "SUPERADMIN") {
+      where = {
+        tenantId: req.user.tenantId,
+        employeeId: req.user.id,
+      };
+    }
 
     const requests = await prisma.bankChangeRequest.findMany({
       where,
       orderBy: { createdAt: "desc" },
+      include: {
+        attachments: true,
+        employee: true,
+        tenant: true,
+      },
     });
 
     return res.json({
@@ -127,7 +158,14 @@ exports.getBankChangeRequestById = async (req, res) => {
             employeeId: req.user.id,
           };
 
-    const request = await prisma.bankChangeRequest.findFirst({ where });
+    const request = await prisma.bankChangeRequest.findFirst({
+      where,
+      include: {
+        attachments: true,
+        employee: true,
+        tenant: true,
+      },
+    });
 
     if (!request) {
       return res.status(404).json({

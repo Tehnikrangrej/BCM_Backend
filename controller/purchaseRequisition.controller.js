@@ -28,9 +28,7 @@ exports.createPurchaseRequisition = async (req, res) => {
     } = req.body;
 
     const totalPrCount = await prisma.purchaseRequisition.count({
-      where: {
-        tenantId: req.user.tenantId,
-      },
+      where: { tenantId: req.user.tenantId },
     });
     const referenceNumber = String(totalPrCount + 1);
 
@@ -111,19 +109,18 @@ exports.getMyPRsAndNextNumber = async (req, res) => {
     const userId = req.user.id;
 
     const prs = await prisma.purchaseRequisition.findMany({
-      where: {
-        createdById: userId,
-      },
+      where:
+        {
+          createdById: userId,
+        },
       include: { lines: true },
       orderBy: { createdAt: "desc" },
     });
 
-    const totalPrCount = await prisma.purchaseRequisition.count({
-      where: {
-        tenantId: req.user.tenantId,
-      },
+    const totalTenantPrCount = await prisma.purchaseRequisition.count({
+      where: { tenantId: req.user.tenantId },
     });
-    const nextPrNumber = totalPrCount + 1;
+    const nextPrNumber = totalTenantPrCount + 1;
 
     return res.json({
       success: true,
