@@ -288,7 +288,8 @@ exports.loginUser = async (req, res) => {
 
     // 1️⃣ Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: { tenant: true, purchaseRequisitions: {include :{lines:true}}, bankChangeRequests: true }
     });
 
     if (!user) {
@@ -333,7 +334,13 @@ exports.loginUser = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        tenantId: user.tenantId
+        tenant: user.tenant,
+        tenantId: user.tenantId,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        purchaseRequisitions: user.purchaseRequisitions,
+        bankChangeRequests: user.bankChangeRequests,
       }
     });
 
