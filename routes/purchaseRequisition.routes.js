@@ -34,6 +34,11 @@ router.get(
   auth,
   controller.getAllPurchaseRequisitions
 );
+router.get(
+  "/next-pr-number",
+  auth,
+  controller.getMyPRsAndNextNumber
+);
 
 /**
  * ✅ GET PR BY ID

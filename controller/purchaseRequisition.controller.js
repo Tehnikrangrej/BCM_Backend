@@ -17,7 +17,6 @@ exports.createPurchaseRequisition = async (req, res) => {
     }
 
     const {
-      referenceNumber,
       name,
       preparedBy,
       requestedDate,
@@ -27,6 +26,9 @@ exports.createPurchaseRequisition = async (req, res) => {
       serviceEndDate,
       lines = [], // 👈 NEW
     } = req.body;
+
+    const totalPrCount = await prisma.purchaseRequisition.count();
+    const referenceNumber = String(totalPrCount + 1);
 
     const pr = await prisma.purchaseRequisition.create({
       data: {
@@ -86,6 +88,39 @@ exports.createPurchaseRequisition = async (req, res) => {
     return res.status(201).json({
       success: true,
       data: pr,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * ==============================
+ * GET MY PRs AND NEXT NUMBER
+ * ==============================
+ */
+exports.getMyPRsAndNextNumber = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const prs = await prisma.purchaseRequisition.findMany({
+      where: {
+        createdById: userId,
+      },
+      include: { lines: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const totalPrCount = await prisma.purchaseRequisition.count();
+    const nextPrNumber = totalPrCount + 1;
+
+    return res.json({
+      success: true,
+      //data: prs,
+      nextPrNumber,
     });
   } catch (error) {
     return res.status(500).json({
