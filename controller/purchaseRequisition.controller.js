@@ -27,7 +27,11 @@ exports.createPurchaseRequisition = async (req, res) => {
       lines = [], // 👈 NEW
     } = req.body;
 
-    const totalPrCount = await prisma.purchaseRequisition.count();
+    const totalPrCount = await prisma.purchaseRequisition.count({
+      where: {
+        tenantId: req.user.tenantId,
+      },
+    });
     const referenceNumber = String(totalPrCount + 1);
 
     const pr = await prisma.purchaseRequisition.create({
@@ -114,7 +118,11 @@ exports.getMyPRsAndNextNumber = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    const totalPrCount = await prisma.purchaseRequisition.count();
+    const totalPrCount = await prisma.purchaseRequisition.count({
+      where: {
+        tenantId: req.user.tenantId,
+      },
+    });
     const nextPrNumber = totalPrCount + 1;
 
     return res.json({
