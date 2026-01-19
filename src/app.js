@@ -1,5 +1,6 @@
 const cors = require("cors");
 const express = require("express");
+const path = require("path");
 const app = express();
  app.use(cors({
   origin: [
@@ -13,6 +14,9 @@ const app = express();
 // ✅ BODY PARSER (REQUIRED)
 app.use(express.json());
 
+// ✅ Static uploads
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+
 // ✅ ROUTES
 app.use("/api/superadmin", require("../routes/SuperAdmin.routes"));
 app.use("/api/tenants", require("../routes/Tenant.routes"));
@@ -20,6 +24,5 @@ app.use("/api/auditlogs", require("../routes/AuditLog.routes"));
 app.use("/api/users", require("../routes/USERS.routes"));
 app.use("/api/purchaserequisitions", require("../routes/purchaseRequisition.routes"));
 app.use("/api/bankchangerequests", require("../routes/BankChangeRequest.routes"));
-app.use("/uploads", express.static("uploads"));
 
 module.exports = app;

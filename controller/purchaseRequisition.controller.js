@@ -30,7 +30,7 @@ exports.createPurchaseRequisition = async (req, res) => {
     const totalPrCount = await prisma.purchaseRequisition.count({
       where: { tenantId: req.user.tenantId },
     });
-    const referenceNumber = String(totalPrCount + 1);
+    const referenceNumber = `${req.user.tenantId}-${totalPrCount + 1}`;
 
     const pr = await prisma.purchaseRequisition.create({
       data: {
@@ -121,11 +121,13 @@ exports.getMyPRsAndNextNumber = async (req, res) => {
       where: { tenantId: req.user.tenantId },
     });
     const nextPrNumber = totalTenantPrCount + 1;
+    const nextReferenceNumber = `${req.user.tenantId}-${nextPrNumber}`;
 
     return res.json({
       success: true,
-      //data: prs,
+      data: prs,
       nextPrNumber,
+      nextReferenceNumber,
     });
   } catch (error) {
     return res.status(500).json({
@@ -151,6 +153,14 @@ exports.getAllPurchaseRequisitions = async (req, res) => {
       where,
       include: { lines: true }, // 👈 NEW
       orderBy: { createdAt: "desc" },
+    });
+
+    await auditLog(req, {
+      entityType: "PURCHASE_REQUISITION",
+      entityId: "-",
+      action: "READ_ALL",
+      newValue: { count: prs.length },
+      source: req.user.role,
     });
 
     return res.json({
@@ -189,6 +199,13 @@ exports.getPurchaseRequisitionById = async (req, res) => {
         message: "Purchase Requisition not found",
       });
     }
+
+    await auditLog(req, {
+      entityType: "PURCHASE_REQUISITION",
+      entityId: pr.id,
+      action: "READ",
+      source: req.user.role,
+    });
 
     return res.json({
       success: true,

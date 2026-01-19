@@ -33,7 +33,7 @@ const upload = multer({ storage });
  */
 
 // CREATE – USER only (employee = logged-in user)
-router.post("/", auth, tenantMiddleware, upload.array("attachments"), controller.createBankChangeRequest);
+router.post("/", auth, upload.array("attachments"), controller.createBankChangeRequest);
 
 // GET ALL – USER (own) | SUPERADMIN (all)
 router.get(

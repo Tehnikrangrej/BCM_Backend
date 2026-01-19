@@ -131,6 +131,14 @@ exports.getAllBankChangeRequests = async (req, res) => {
       },
     });
 
+    await auditLog(req, {
+      entityType: "BANK_CHANGE_REQUEST",
+      entityId: "-",
+      action: "READ_ALL",
+      newValue: { count: requests.length },
+      source: req.user.role,
+    });
+
     return res.json({
       success: true,
       data: requests,
@@ -174,6 +182,13 @@ exports.getBankChangeRequestById = async (req, res) => {
         message: "Bank Change Request not found",
       });
     }
+
+    await auditLog(req, {
+      entityType: "BANK_CHANGE_REQUEST",
+      entityId: request.id,
+      action: "READ",
+      source: req.user.role,
+    });
 
     return res.json({
       success: true,
