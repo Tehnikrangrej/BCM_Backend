@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const superadminController = require("../controller/Superadmin.controller");    
+const superadminController = require("../controller/SuperAdmin.controller");    
 const { verifyToken } = require("../utils/auth.middleware");
 
 /* ================= AUTH ================= */

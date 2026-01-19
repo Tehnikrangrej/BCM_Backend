@@ -60,6 +60,7 @@ exports.createBankChangeRequest = async (req, res) => {
         fileMimeType: file.mimetype,
         uploadedById: req.user.id,
         bankChangeRequestId: request.id,
+        
       }));
 
       await prisma.attachment.createMany({

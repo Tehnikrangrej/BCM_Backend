@@ -3,7 +3,7 @@ const router = express.Router();
 
 const auth = require("../utils/auth");
 const { onlySuperAdmin } = require("../utils/superAdmin.guard");
-const controller = require("../controller/PurchaseRequisition.controller");
+const controller = require("../controller/purchaseRequisition.controller");
 
 /**
  * ❌ CREATE PR
