@@ -27,10 +27,15 @@ exports.createPurchaseRequisition = async (req, res) => {
       lines = [], // 👈 NEW
     } = req.body;
 
-    const totalPrCount = await prisma.purchaseRequisition.count({
-      where: { tenantId: req.user.tenantId },
-    });
-    const referenceNumber = `${req.user.tenantId}-${totalPrCount + 1}`;
+   // 🔢 Increment tenant PR sequence safely
+const tenantCounter = await prisma.tenant.update({
+  where: { id: req.user.tenantId },
+  data: { prSequence: { increment: 1 } },
+  select: { prSequence: true }
+});
+
+// 🧾 Generate PR number
+   const referenceNumber = `PR-${tenantCounter.prSequence}`;
 
     const pr = await prisma.purchaseRequisition.create({
       data: {

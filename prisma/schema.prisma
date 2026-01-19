@@ -28,6 +28,13 @@ model Tenant {
   name     String
   domain   String  @unique
   isActive Boolean @default(true)
+  procurement   Boolean @default(false)
+  hr            Boolean @default(false)
+  finance       Boolean @default(false)
+  it            Boolean @default(false)
+  sales         Boolean @default(false)
+
+  prSequence    Int     @default(0)
 
   users    User[]
   prs      PurchaseRequisition[]

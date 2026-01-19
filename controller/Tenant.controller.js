@@ -317,3 +317,17 @@ exports.TenantSyncUsers = async (req, res) => {
     });
   }
 };
+exports.getMyTenantServices = async (req, res) => {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: req.user.tenantId },
+    select: {
+      procurement: true,
+      hr: true,
+      finance: true,
+      it: true,
+      sales: true
+    }
+  });
+
+  res.json({ success: true, data: tenant });
+};

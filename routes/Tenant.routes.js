@@ -12,6 +12,7 @@ router.use(verifyToken, onlySuperAdmin);
 router.post("/", tenantController.createTenant);
 router.get("/", tenantController.getTenants);
 router.get("/:id", tenantController.getTenantById);
+router.get("/myservices/", tenantController.getMyTenantServices);
 router.put("/:id", tenantController.updateTenant);
 router.delete("/:id", tenantController.deleteTenant);
 // Block / Unblock

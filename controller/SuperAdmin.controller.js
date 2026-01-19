@@ -398,3 +398,23 @@ exports.unblockSuperAdmin = async (req, res) => {
     });
   }
 };
+exports.updateTenantServices = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { procurement, hr, finance, it, sales } = req.body;
+
+    const tenant = await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { procurement, hr, finance, it, sales }
+    });
+
+    res.json({
+      success: true,
+      message: "Tenant services updated successfully",
+      data: tenant
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

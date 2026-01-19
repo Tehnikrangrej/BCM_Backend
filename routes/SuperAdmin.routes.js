@@ -17,10 +17,17 @@ router.get("/:id", superadminController.getSuperAdminById);
 /* ================= UPDATE ================= */
 router.put("/:id", superadminController.updateSuperAdmin);
 
+/* ================= UPDATE Services ================= */
+router.put(
+  "/tenant/:tenantId/services",
+  verifyToken,
+  superadminController.updateTenantServices
+);
+
 /* ================= DELETE ================= */
 router.delete("/:id", superadminController.deleteSuperAdmin);
 
 /* ================= BLOCK ================= */
 router.patch("/block/:id", superadminController.blockSuperAdmin);
-router.patch("/unblock/:id", superadminController.unblockSuperAdmin);       
+router.patch("/unblock/:id", superadminController.unblockSuperAdmin);   
 module.exports = router;
