@@ -27,15 +27,16 @@ exports.createPurchaseRequisition = async (req, res) => {
       lines = [], // 👈 NEW
     } = req.body;
 
-   // 🔢 Increment tenant PR sequence safely
-const tenantCounter = await prisma.tenant.update({
+  // 🔢 Increment tenant PR sequence safely and get domain
+const tenant = await prisma.tenant.update({
   where: { id: req.user.tenantId },
   data: { prSequence: { increment: 1 } },
-  select: { prSequence: true }
+  select: { prSequence: true, domain: true },
 });
 
-// 🧾 Generate PR number
-   const referenceNumber = `PR-${tenantCounter.prSequence}`;
+// 🧾 Clean domain (remove dots) and generate PR number
+const cleanDomain = tenant.domain.replace(/\./g, "").toUpperCase();
+const referenceNumber = `PR-${cleanDomain}-${tenant.prSequence}`;
 
     const pr = await prisma.purchaseRequisition.create({
       data: {
