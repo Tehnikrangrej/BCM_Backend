@@ -112,26 +112,29 @@ const referenceNumber = `PR-${cleanDomain}-${tenant.prSequence}`;
  */
 exports.getMyPRsAndNextNumber = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const prs = await prisma.purchaseRequisition.findMany({
-      where:
-        {
-          createdById: userId,
-        },
-      include: { lines: true },
-      orderBy: { createdAt: "desc" },
+    // 🔍 Get tenant info from DB
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user.tenantId },
+      select: { domain: true, prSequence: true },
     });
 
-    const totalTenantPrCount = await prisma.purchaseRequisition.count({
-      where: { tenantId: req.user.tenantId },
-    });
-    const nextPrNumber = totalTenantPrCount + 1;
-    const nextReferenceNumber = `${req.user.tenantId}-${nextPrNumber}`;
+    if (!tenant) {
+      return res.status(404).json({
+        success: false,
+        message: "Tenant not found",
+      });
+    }
+
+    // 🧾 Clean domain
+    const cleanDomain = tenant.domain.replace(/\./g, "").toUpperCase();
+
+    // ✅ Use sequence instead of count (SAFE)
+    const nextPrNumber = `PR-${tenant.prSequence + 1}`;
+
+    const nextReferenceNumber = `PR-${cleanDomain}-${nextPrNumber}`;
 
     return res.json({
       success: true,
-      data: prs,
       nextPrNumber,
       nextReferenceNumber,
     });
@@ -142,6 +145,7 @@ exports.getMyPRsAndNextNumber = async (req, res) => {
     });
   }
 };
+
 
 /**
  * ==============================
