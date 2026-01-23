@@ -128,12 +128,14 @@ exports.getMyPRsAndNextNumber = async (req, res) => {
     }
 
     // 🧾 Clean domain
-    const cleanDomain = tenant.domain.replace(/\./g, "").toUpperCase();
+    const domain =
+  tenant.domain.charAt(0).toUpperCase() + tenant.domain.slice(1);
+
 
     // ✅ Use sequence instead of count (SAFE)
     const nextPrNumber = `PR-${tenant.prSequence + 1}`;
 
-    const nextReferenceNumber = `${cleanDomain}-${nextPrNumber}`;
+    const nextReferenceNumber = `${domain}-${nextPrNumber}`;
 
     return res.json({
       success: true,
