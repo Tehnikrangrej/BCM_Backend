@@ -36,8 +36,10 @@ const tenant = await prisma.tenant.update({
 });
 
 // 🧾 Clean domain (remove dots) and generate PR number
-const cleanDomain = tenant.domain.replace(/\./g, "").toUpperCase();
-const referenceNumber = `${cleanDomain}-${tenant.prSequence}`;
+ const domain =
+  tenant.domain.charAt(0).toUpperCase() + tenant.domain.slice(1);
+
+const referenceNumber = `${domain}-${tenant.prSequence}`;
 
     const pr = await prisma.purchaseRequisition.create({
       data: {
