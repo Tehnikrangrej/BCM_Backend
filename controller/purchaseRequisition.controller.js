@@ -22,6 +22,7 @@ exports.createPurchaseRequisition = async (req, res) => {
       requestedDate,
       accountingDate,
       reason,
+      erpPrNumber,
       serviceStartDate,
       serviceEndDate,
       lines = [], // 👈 NEW
@@ -36,7 +37,7 @@ const tenant = await prisma.tenant.update({
 
 // 🧾 Clean domain (remove dots) and generate PR number
 const cleanDomain = tenant.domain.replace(/\./g, "").toUpperCase();
-const referenceNumber = `PR-${cleanDomain}-${tenant.prSequence}`;
+const referenceNumber = `${cleanDomain}-${tenant.prSequence}`;
 
     const pr = await prisma.purchaseRequisition.create({
       data: {
@@ -47,6 +48,7 @@ const referenceNumber = `PR-${cleanDomain}-${tenant.prSequence}`;
         requestedDate: new Date(requestedDate),
         accountingDate: new Date(accountingDate),
         reason,
+        erpPrNumber,
         serviceStartDate,
         serviceEndDate,
         tenantId: req.user.tenantId,
