@@ -133,7 +133,7 @@ exports.getMyPRsAndNextNumber = async (req, res) => {
     // ✅ Use sequence instead of count (SAFE)
     const nextPrNumber = `PR-${tenant.prSequence + 1}`;
 
-    const nextReferenceNumber = `PR-${cleanDomain}-${nextPrNumber}`;
+    const nextReferenceNumber = `${cleanDomain}-${nextPrNumber}`;
 
     return res.json({
       success: true,
