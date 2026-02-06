@@ -32,7 +32,6 @@ exports.createBankChangeRequest = async (req, res) => {
 
     const request = await prisma.bankChangeRequest.create({
       data: {
-
         accountHolderName,
         newBankName,
         newBankBranch,

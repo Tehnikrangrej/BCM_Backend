@@ -89,7 +89,7 @@ exports.getTenantById = async (req, res) => {
 exports.updateTenant = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, domain } = req.body;
+    const { name, domain, procurement , hr , finance, it , sales } = req.body;
 
     const existingTenant = await prisma.tenant.findUnique({
       where: { id },
@@ -118,7 +118,7 @@ exports.updateTenant = async (req, res) => {
 
     const updatedTenant = await prisma.tenant.update({
       where: { id },
-      data: { name, domain },
+      data: { name, domain, procurement , hr , finance, it , sales },
     });
 
     return res.status(200).json({
