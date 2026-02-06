@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 /* ================= CREATE TENANT ================= */
 exports.createTenant = async (req, res) => {
   try {
-    const { name, domain } = req.body;
+    const { name, domain, procurement , hr , } = req.body;
 
     // check domain already exists
     const existingTenant = await prisma.Tenant.findUnique({
@@ -22,6 +22,8 @@ exports.createTenant = async (req, res) => {
       data: {
         name,
         domain,
+        procurement: true,
+        hr: true,
       },
     });
 
