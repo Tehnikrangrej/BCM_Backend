@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3001;
 
 
 app.get("/health", (req, res) => {
-  res.status(200).send("OK");
+  res.status(200).send("OKk");
 });
 
 app.listen(PORT, () => {
