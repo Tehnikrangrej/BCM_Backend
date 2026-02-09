@@ -81,6 +81,8 @@ exports.createBankChangeRequest = async (req, res) => {
       entityType: "BANK_CHANGE_REQUEST",
       entityId: request.id,
       action: "CREATE",
+      tenantId: request.tenantId,
+     
       newValue: {
         accountHolderName: request.accountHolderName,
         newBankName: request.newBankName,
@@ -134,9 +136,11 @@ exports.getAllBankChangeRequests = async (req, res) => {
     await auditLog(req, {
       entityType: "BANK_CHANGE_REQUEST",
       entityId: "-",
+      tenantId: req.user.tenantId,
       action: "READ_ALL",
       newValue: { count: requests.length },
       source: req.user.role,
+     
     });
 
     return res.json({
@@ -250,6 +254,8 @@ exports.updateBankChangeRequest = async (req, res) => {
     await auditLog(req, {
       entityType: "BANK_CHANGE_REQUEST",
       entityId: existing.id,
+      tenantId: existing.tenantId,
+      
       action: "UPDATE",
       oldValue: {
         newBankName: existing.newBankName,
@@ -311,6 +317,8 @@ exports.deleteBankChangeRequest = async (req, res) => {
     await auditLog(req, {
       entityType: "BANK_CHANGE_REQUEST",
       entityId: existing.id,
+      tenantId: existing.tenantId,
+      
       action: "DELETE",
       oldValue: {
         accountHolderName: existing.accountHolderName,

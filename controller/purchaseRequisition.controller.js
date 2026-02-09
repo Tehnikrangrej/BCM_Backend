@@ -94,6 +94,7 @@ const referenceNumber = `${domain}-${tenant.prSequence}`;
         status: pr.status,
         totalLines: pr.lines.length,
       },
+
       source: req.user.role,
     });
 
@@ -177,6 +178,8 @@ exports.getAllPurchaseRequisitions = async (req, res) => {
       action: "READ_ALL",
       newValue: { count: prs.length },
       source: req.user.role,
+      
+
     });
 
     return res.json({
@@ -221,6 +224,8 @@ exports.getPurchaseRequisitionById = async (req, res) => {
       entityId: pr.id,
       action: "READ",
       source: req.user.role,
+     
+
     });
 
     return res.json({
