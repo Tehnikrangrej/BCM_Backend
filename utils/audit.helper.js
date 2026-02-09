@@ -2,25 +2,24 @@ const prisma = require("./prisma");
 
 exports.auditLog = async (req, payload) => {
   try {
-    let tenantId = null;
+    let tenantId;
 
-    // 🔒 RULE 1: USER actions MUST have tenant
+    // 🔐 RULE 1: USER actions ALWAYS have tenant
     if (req.user?.role === "USER") {
       tenantId = req.user.tenantId;
     }
-    // 🔒 RULE 2: SUPERADMIN tenant actions
+    // 🔐 RULE 2: SUPERADMIN tenant actions
     else if (payload.tenantId) {
       tenantId = payload.tenantId;
     }
-    // 🔒 RULE 3: SYSTEM / LOGIN / background
+    // 🔐 RULE 3: SYSTEM actions
     else {
       tenantId = "SYSTEM";
     }
 
-    // 🏢 Fetch tenant metadata ONLY if real tenant
     let tenantMeta = null;
 
-    if (tenantId && tenantId !== "SYSTEM") {
+    if (tenantId !== "SYSTEM") {
       tenantMeta = await prisma.tenant.findUnique({
         where: { id: tenantId },
         select: { name: true, domain: true },
@@ -30,29 +29,23 @@ exports.auditLog = async (req, payload) => {
     await prisma.auditLog.create({
       data: {
         tenantId,
+        tenantName: tenantMeta?.name || null,
+        tenantDomain: tenantMeta?.domain || null,
 
         entityType: payload.entityType,
         entityId: payload.entityId,
         action: payload.action,
 
+        // ❌ NO tenant inside newValue
         oldValue: payload.oldValue || null,
-
-        newValue: {
-          ...(payload.newValue || {}),
-          tenant: tenantMeta
-            ? {
-                name: tenantMeta.name,
-                domain: tenantMeta.domain,
-              }
-            : null,
-        },
+        newValue: payload.newValue || null,
 
         performedBy: req.user?.id || "SYSTEM",
         source: payload.source || req.user?.role || "SYSTEM",
       },
     });
-  } catch (error) {
-    console.error("AUDIT LOG FAILED ❌", error);
-    // ❗ NEVER crash main API
+  } catch (err) {
+    console.error("AUDIT FAILED ❌", err);
+    // never break main API
   }
 };

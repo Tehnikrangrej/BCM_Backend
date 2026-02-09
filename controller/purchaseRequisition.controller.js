@@ -293,15 +293,27 @@ exports.updatePurchaseRequisition = async (req, res) => {
       });
     }
 
-    // 🔍 AUDIT – UPDATE
-    await auditLog(req, {
-      entityType: "PURCHASE_REQUISITION",
-      entityId: existing.id,
-      action: "UPDATE",
-      oldValue: { lineCount: existing.lines.length },
-      newValue: { lineCount: lines.length },
-      source: req.user.role,
-    });
+   await auditLog(req, {
+  entityType: "PURCHASE_REQUISITION",
+  entityId: existing.id,
+  action: "UPDATE",
+
+  oldValue: {
+    name: existing.name,
+    status: existing.status,
+    reason: existing.reason,
+    lineCount: existing.lines.length,
+  },
+
+  newValue: {
+    name: pr.name,
+    status: pr.status,
+    reason: pr.reason,
+    lineCount: lines.length,
+  },
+
+  source: req.user.role,
+});
 
     return res.json({
       success: true,
