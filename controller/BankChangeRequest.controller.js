@@ -56,7 +56,7 @@ exports.createBankChangeRequest = async (req, res) => {
         entityId: request.id,
         attachmentType: "BANK_CHANGE_REQUEST",
         fileName: file.originalname,
-        fileUrl: "/uploads/" + file.filename,
+        fileUrl: file.path,              
         fileMimeType: file.mimetype,
         uploadedById: req.user.id,
         bankChangeRequestId: request.id,

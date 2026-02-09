@@ -18,7 +18,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // ✅ ROUTES
-app.use("/api/superadmin", require("../routes/SuperAdmin.routes"));
+app.use("/api/superadmin", require("../routes/Superadmin.routes"));
 app.use("/api/tenants", require("../routes/Tenant.routes"));
 app.use("/api/auditlogs", require("../routes/AuditLog.routes"));
 app.use("/api/users", require("../routes/USERS.routes"));

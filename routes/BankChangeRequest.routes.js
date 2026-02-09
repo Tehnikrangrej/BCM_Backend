@@ -8,32 +8,13 @@ const auth = require("../utils/auth");
 const { tenantMiddleware } = require("../utils/tenant.middleware");
 
 const controller = require("../controller/BankChangeRequest.controller");
-
-const uploadDir = path.join(__dirname, "..", "uploads");
-
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  },
-});
-
-const upload = multer({ storage });
-
+const upload = require("../utils/cloudinaryUpload");
 /**
  * Bank Change Request Routes
  */
 
 // CREATE – USER only (employee = logged-in user)
-router.post("/", auth, upload.array("attachments"), controller.createBankChangeRequest);
+router.post("/", auth, upload.array("attachments", 5),  controller.createBankChangeRequest);
 
 // GET ALL – USER (own) | SUPERADMIN (all)
 router.get(
